@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { wait } from './wait.js'
+import { createAppAuth } from '@octokit/auth-app'
 
 /**
  * The main function for the action.
@@ -19,6 +20,24 @@ export async function run(): Promise<void> {
 
     // Set outputs for other workflow steps to use
     core.setOutput('time', new Date().toTimeString())
+
+    const baseUrl = process.env.GITHUB_API_URL
+    const githubAppId: string = process.env.GITHUB_APP_ID ?? ''
+    const privateKey = process.env.GITHUB_PRIVATE_KEY
+    const installationId = process.env.GITHUB_INSTALLATION_ID
+
+    const auth = createAppAuth({
+      appId: githubAppId,
+      privateKey: privateKey ?? '',
+      installationId,
+      baseUrl
+    })
+
+    // Retrieve installation access token
+    const installationAuthentication = await auth({
+      type: 'installation',
+      installationId
+    })
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
